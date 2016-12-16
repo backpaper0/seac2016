@@ -1,5 +1,6 @@
 package com.example;
 
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,9 +20,12 @@ public class IssueController {
     final IssueDao issueDao;
     final CategoryDao categoryDao;
 
-    public IssueController(IssueDao issueDao, CategoryDao categoryDao) {
+    final Verifier verifier;
+
+    public IssueController(IssueDao issueDao, CategoryDao categoryDao, Verifier verifier) {
         this.issueDao = Objects.requireNonNull(issueDao);
         this.categoryDao = Objects.requireNonNull(categoryDao);
+        this.verifier = Objects.requireNonNull(verifier);
     }
 
     @GetMapping
@@ -34,20 +38,28 @@ public class IssueController {
     }
 
     @GetMapping("new")
-    String blank(Model model, @RequestParam Long categoryId) {
+    String blank(Model model, @RequestParam Long categoryId) throws GeneralSecurityException {
 
         //Categoryの存在チェック
         Category category = categoryDao.selectById(categoryId).orElseThrow(BadRequest::new);
 
+        //ハッシュ作ってhiddenフィールドで埋め込む
+        String hash = verifier.hash(categoryId);
+
         model.addAttribute("category", category);
+        model.addAttribute("hash", hash);
         return "new-issue";
     }
 
     @PostMapping("new")
-    String post(@RequestParam String content, @RequestParam Long categoryId) {
+    String post(@RequestParam String content, @RequestParam Long categoryId,
+            @RequestParam String hash)
+            throws GeneralSecurityException {
 
-        //登録時にもう一回存在チェック
-        categoryDao.selectById(categoryId).orElseThrow(BadRequest::new);
+        //ハッシュ値のチェックをするだけ。DBアクセスがなくなる。
+        if (verifier.verify(hash, categoryId) == false) {
+            throw new BadRequest();
+        }
 
         Issue entity = new Issue();
         entity.content = content;
