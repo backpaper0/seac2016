@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+        <title>Issues</title>
+    </head>
+    <body>
+        <form action="new-issue.html" data-th-action="@{'/new'}" method="get">
+            <p>
+                <select name="categoryId">
+                    <option data-th-each="category : ${categories}" data-th-value="${category.id}" data-th-text="${category.name}">foo</option>
+                </select>
+                <button type="submit">New</button>
+            </p>
+        </form>
+        <hr/>
+        <ul>
+            <li data-th-each="issue : ${issues}">
+                <span data-th-text="${issue.category}">hoge</span>
+                :
+                <span data-th-text="${issue.content}">hoge</span>
+            </li>
+        </ul>
+    </body>
+</html>
